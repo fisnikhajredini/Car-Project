@@ -95,12 +95,19 @@ void loop() {
       }
       //This if statement will take the other part of the string that we recieved from the proxy
       if(inByte == ':') {
-        inByteSteer = Serial.read();
-        inByteSteer++;
-        if(inByteSteer == ' '){
-          break;
+        inByte++;
+        while(Serial.available() > 0) {
+          
+          
+          inByteSteer = Serial.read();
+          
+          
+          if(inByteSteer == ' '){
+            break;
+          }
+          inputStringSteer += inByteSteer;
+          inByte++;
         }
-        inputStringSteer += inByteSteer;
       }
       //Add each inByte to the inputString. 
       inputString += inByte; 
