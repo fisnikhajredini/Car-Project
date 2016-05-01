@@ -12,6 +12,7 @@ SonarSRF08 USFC;
 SonarSRF08 USFR;
 
 String inputString;
+String inputStringSteer;
 
 char inByte;
 char inByteSteer;
@@ -92,33 +93,37 @@ void loop() {
       if(inByte == ' ') {
         break;
       }
-      
-  
+      //This if statement will take the other part of the string that we recieved from the proxy
+      if(inByte == ':') {
+        inByteSteer = Serial.read();
+        inByteSteer++;
+        if(inByteSteer == ' '){
+          break;
+        }
+        inputStringSteer += inByteSteer;
+      }
       //Add each inByte to the inputString. 
-      inputString = inputString + inByte; 
+      inputString += inByte; 
     }
     //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
+    //Need to test with only inputString.length running both driving and steering commands.
     if(inputString.length() > 1) {
-  
-      drive = inputString.toInt();
-  
-      driveServo.writeMicroseconds(drive);
       
-  
+      drive = inputString.toInt();
+      
+      driveServo.writeMicroseconds(drive);
     }
-    if(inputString.length() > 1) {
-      //Takes the String for inputString and change it to a Integer.
-      steer = inputString.toInt();
-  
-      //steerServo will use the new Integer steer to steer.
+    if(inputStringSteer.length() > 1){
+
+      steer = inputStringSteer.toInt();
+      
       steerServo.write(steer);
-  
     }
   }
   //Restoring the original value to inputString.
 
   inputString = "";
-  
+  inputStringSteer = "";
   
   //This should clean the buffer. 
   Serial.flush();
