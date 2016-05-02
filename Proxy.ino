@@ -84,48 +84,50 @@ void loop() {
   //This is where the arduino will recieve messages from the proxy.
   
   //Checking all the Serial that is recieved and will start if the Serial is greater than 0.
-      while(Serial.available() > 0) {
+    while(Serial.available() > 0) {
   
-      //Value that will read in the Serial and put it in the inByte.
-      inByte = Serial.read();
+    //Value that will read in the Serial and put it in the inByte.
+    inByte = Serial.read();
     
       //Checks for spaces between the Serial. Can be changed and suited for specific projects. This one is just using space as a checker
-      if(inByte == ' ') {
-        break;
-      }
-      //This if statement will take the other part of the string that we recieved from the proxy
-      if(inByte == ':') {
-        inByte++;
-        while(Serial.available() > 0) {
-          
-          
-          inByteSteer = Serial.read();
-          
-          
-          if(inByteSteer == ' '){
-            break;
-          }
-          inputStringSteer += inByteSteer;
-          inByte++;
-        }
-      }
-      //Add each inByte to the inputString. 
-      inputString += inByte; 
+    if(inByte == ' ') {
+      break;
     }
+      //This if statement will take the other part of the string that we recieved from the proxy
+    if(inByte == ':') {
+      inByte++;
+      while(Serial.available() > 0) {
+          
+        inByteSteer = Serial.read();
+          
+        if(inByteSteer == ' '){
+          break;
+        }
+        inputStringSteer += inByteSteer;
+        inByte++;
+      }
+    }
+      //Add each inByte to the inputString. 
+    inputString += inByte; 
+  }
     //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
     //Need to test with only inputString.length running both driving and steering commands.
-    if(inputString.length() > 1) {
+    if(inputString.length() > 1 && inputStringSteer.length() > 1) {
       
       drive = inputString.toInt();
       
       driveServo.writeMicroseconds(drive);
-    }
-    if(inputStringSteer.length() > 1){
-
+      
       steer = inputStringSteer.toInt();
       
       steerServo.write(steer);
     }
+  /*  if(inputStringSteer.length() > 1){
+
+      steer = inputStringSteer.toInt();
+      
+      steerServo.write(steer);
+    } */
   }
   //Restoring the original value to inputString.
 
