@@ -84,7 +84,7 @@ void loop() {
   //This is where the arduino will recieve messages from the proxy.
   
   //Checking all the Serial that is recieved and will start if the Serial is greater than 0.
-    while(Serial.available() > 0) {
+      while(Serial.available() > 0) {
   
       //Value that will read in the Serial and put it in the inByte.
       inByte = Serial.read();
