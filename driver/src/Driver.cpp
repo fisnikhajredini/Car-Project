@@ -58,12 +58,14 @@ namespace automotive {
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Driver::body() {
         	bool carIsMoving = false;
         	bool spaceMeasurementCommenced = false;
-        	bool startReverseParking = false;
         	bool startParkingSequence = false;
         	bool startReverseRightParking = false;
         	bool startReverseLeftParking = false;
+            bool prepareToPark = false;
+            bool obstacleFound = false ;
         	double spaceSearchStartPosition = 0;
-        	int reverCounter =0;
+                
+        	int counter =0;
         	
         
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
@@ -72,79 +74,103 @@ namespace automotive {
                 // 1. Get most recent vehicle data:
                 Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
                 VehicleData vd = containerVehicleData.getData<VehicleData> ();
-                cerr << "Most recent vehicle data: '" << vd.toString() << "'" << endl;
+            //    cerr << "Most recent vehicle data: '" << vd.toString() << "'" << endl;
 
                 // 2. Get most recent sensor board data:
                 Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
                 SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
-                cerr << "Most recent sensor board data: '" << sbd.toString() << "'" << endl;
+          //      cerr << "Most recent sensor board data: '" << sbd.toString() << "'" << endl;
 
                 // Design your control algorithm here depending on the input data from above.
 
                 // Create vehicle control data.
                 VehicleControl vc;
-
-				if(!carIsMoving) { // initialize speed
-					 vc.setSpeed(2);
+                
+                 cerr << "Obstacle" << sbd.getValueForKey_MapOfDistances(2)<< " Distance: " << (vd.getAbsTraveledPath() - spaceSearchStartPosition)<< endl;
+                for(int i = 0 ; i< 100000; i++){
+                    
+                }
+				if(carIsMoving == false) { // initialize speed
+					 vc.setSpeed(2.0);
 					 vc.setSteeringWheelAngle(0);
-					 carIsMoving = true;
-					 
-				}
+                     carIsMoving = true;
+                    //cerr << "Car Initialized" << endl;
+
+                }else if(prepareToPark == false && spaceMeasurementCommenced == false && startParkingSequence == false
+                         && startParkingSequence == false && startReverseRightParking == false && startReverseLeftParking == false){
+                    vc.setSpeed(1.0);
+                    vc.setSteeringWheelAngle(0);
+                    carIsMoving = true;
+                    //cerr << "Car Moving" << endl;
+                }
+                
 				
                 // With setSpeed you can set a desired speed for the vehicle in the range of -2.0 (backwards) .. 0 (stop) .. +2.0 (forwards)
-                if(sbd.getValueForKey_MapOfDistances(2) < 0  && !spaceMeasurementCommenced) {// space sequence detected
+                if(sbd.getValueForKey_MapOfDistances(2) < 0  && spaceMeasurementCommenced == false) {// space sequence detected
                 	spaceMeasurementCommenced = true;
                 	spaceSearchStartPosition = vd.getAbsTraveledPath();
-                	vc.setSpeed(1);
+                	vc.setSpeed(0.5);
 					vc.setSteeringWheelAngle(0);
+                    cerr << "sequence detected" << endl;
                 }
 
-				if(spaceMeasurementCommenced && !prepareToParking ){
+				if(spaceMeasurementCommenced == true && prepareToPark ==false){
+                    vc.setSpeed(0.5);
+                    vc.setSteeringWheelAngle(0);
+                    
 					if(sbd.getValueForKey_MapOfDistances(2) > 0){
 						obstacleFound = true;
 					}
-					if( (vd.getAbsTraveledPath() - spaceSearchStartPosition) > 6){
-						prepareToParking = true;
+					if( (vd.getAbsTraveledPath() - spaceSearchStartPosition) > 7){
+						prepareToPark = true;
 						
-					}else if( obstacleFound){ // throw space measurement data away and start over
-						spaceMeasurementCommenced == false;
+					}else if( obstacleFound == true){ // throw space measurement data away and start over
+						spaceMeasurementCommenced = false;
 					}
+
+                   cerr << "Measuring space: " << (vd.getAbsTraveledPath() - spaceSearchStartPosition)<< endl;
 				}
 				
-				if(prepareToParking  && !startParkingSequence){
+				if(prepareToPark == true  && startParkingSequence == false){
 					vc.setFlashingLightsRight(true);
 					vc.setSpeed(0.5);
-					counter++;
-					counter++;
-					startParking == true
+                    vc.setSteeringWheelAngle(0);
+                    if (++counter > 20){
+					
+                        startParkingSequence = true;
+                    }
+                    cerr << "Prepaerring to park: Counter " << counter<< endl;
 				}
-				
-				if(startParkingSequence && !startReverseRightParking){
+				if(startParkingSequence == true && startReverseRightParking == false){
 					vc.setBrakeLights(true);
 					vc.setSpeed(0);
 					vc.setSteeringWheelAngle(0);
-					startReverseParking = true;
+                    startReverseRightParking = true;
+                    cerr << "Prepaerring to park: Counter " << counter<< endl;
 				}
 				
-				if(startReverseRightParking && !startReverseLeftParking){
+				if(startReverseRightParking == true && startReverseLeftParking == false){
 					vc.setBrakeLights(false);
 					vc.setSpeed(-1.6);
 					vc.setSteeringWheelAngle(25);
-					if(++reverseCounter > 40){
+					if(++counter > 60){
 						startReverseLeftParking = true;
 					}
+                    cerr << "Reverse Right"<< endl;
 				}
 				
-				if(startReverseLeftParking){
+				if(startReverseLeftParking == true){
+                    cerr << "Reverse left"<< endl;
 					vc.setSpeed(-.175);
 					vc.setSteeringWheelAngle(-25);
-					if(++reverseCounter > 175{
+					if(++counter > 195){
 						// park car
 						vc.setBrakeLights(true);
 						vc.setSpeed(0);
 						vc.setSteeringWheelAngle(0);
 						vc.setBrakeLights(true);
 						vc.setFlashingLightsRight(false);
+                        break;
 					}
 				
 				}
