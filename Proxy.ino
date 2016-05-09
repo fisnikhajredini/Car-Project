@@ -8,12 +8,16 @@
 
 Servo steerServo; 
 Servo driveServo;
-SonarSRF08 USFC;
-SonarSRF08 USFR;
+SonarSRF08 USF;
+SonarSRF08 USR;
 
 String inputString;
 String inputStringSteer;
+String inputStringChecker;
+String inputStringSpeed;
 
+char inByteDrive;
+char inByteChecker;
 char inByte;
 char inByteSteer;
 
@@ -27,6 +31,7 @@ int drive = 1500;
 int steer = 90;
 
 float sensorReading = 0;
+float analogReading = 0;
 
 volatile int rcInteruppt = LOW;
 
@@ -37,13 +42,13 @@ void setup() {
   steerServo.attach(5);
  
   //Initialize Serial-Communication
-  Serial.begin(56700);
+  Serial.begin(9600);
 
   driveServo.writeMicroseconds(drive);
   steerServo.write(steer);
 
-  USFC.connect(MAIN_08_ADDRESS, GAIN_REGISTER, LOCATION_REGISTER);
-  USFR.connect(US_08_FRONTRIGHT, GAIN_REGISTER, LOCATION_REGISTER);
+  USF.connect(MAIN_08_ADDRESS, GAIN_REGISTER, LOCATION_REGISTER);
+  USR.connect(US_08_FRONTRIGHT, GAIN_REGISTER, LOCATION_REGISTER);
 
   pinMode(rcPin1,INPUT);
   pinMode(rcPin2,INPUT);
@@ -66,73 +71,62 @@ void loop() {
   }
   else {
   //This is where the arduino will send sensor data to the proxy
-    sensorReading = USFC.getRange();
-    distance("USFC", sensorReading);
 
-    sensorReading = USFR.getRange();
-    distance("USFR", sensorReading);
+   
+    sensorReading = USF.getRange();
+    distance("USF", sensorReading);
 
-    sensorReading = analogRead(IRFR);
-    distance("IRFR", sensorReading);
+    sensorReading = USR.getRange();
+    distance("USR", sensorReading);
 
-    sensorReading = analogRead(IRRR);
-    distance("IRRR", sensorReading);
+    analogReading = analogRead(IRFR);
+    irDistance("IRFR", analogReading);
 
-    sensorReading = analogRead(IRRC);
-    distance("IRRC", sensorReading);
+    analogReading = analogRead(IRRR);
+    irDistance("IRRR", analogReading);
+
+    analogReading = analogRead(IRRC);
+    irDistance("IRRC", analogReading);
   
   //This is where the arduino will recieve messages from the proxy.
   
   //Checking all the Serial that is recieved and will start if the Serial is greater than 0.
-    while(Serial.available() > 0) {
-  
-    //Value that will read in the Serial and put it in the inByte.
-    inByte = Serial.read();
-    
-      //Checks for spaces between the Serial. Can be changed and suited for specific projects. This one is just using space as a checker
-    if(inByte == ' ') {
-      break;
-    }
-      //This if statement will take the other part of the string that we recieved from the proxy
-    if(inByte == ':') {
-      inByte++;
-      while(Serial.available() > 0) {
-          
-        inByteSteer = Serial.read();
-          
-        if(inByteSteer == ' '){
-          break;
-        }
-        inputStringSteer += inByteSteer;
-        inByte++;
+   while(Serial.available() > 0) {
+      
+      inByte = Serial.read();
+
+      inputString +=inByte;
+      
+      int indexOne = inputString.indexOf("=");
+      int indexTwo = inputString.indexOf("=", indexOne + 1);
+      int indexThree = inputString.indexOf(";");
+      int indexFour = inputString.indexOf(";", indexThree + 1);
+      
+
+      if(inputString.substring(0, indexOne) == "speed" && inputString.substring(indexThree +1, indexTwo) == "angle") {
+        drive = inputString.substring(indexOne + 1, indexThree).toInt();
+        steer = inputString.substring(indexTwo +1, indexFour).toInt();
+        Serial.flush();
       }
-    }
-      //Add each inByte to the inputString. 
-    inputString += inByte; 
-  }
+      
+   }  
     //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
     //Need to test with only inputString.length running both driving and steering commands.
-    if(inputString.length() > 1 && inputStringSteer.length() > 1) {
-      
-      drive = inputString.toInt();
+    if(inputString.length() >1 ) {
       
       driveServo.writeMicroseconds(drive);
-      
-      steer = inputStringSteer.toInt();
-      
+
       steerServo.write(steer);
     }
-  /*  if(inputStringSteer.length() > 1){
-
-      steer = inputStringSteer.toInt();
-      
-      steerServo.write(steer);
-    } */
+    
+    //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
+    //Need to test with only inputString.length running both driving and steering commands.
+   
   }
   //Restoring the original value to inputString.
 
   inputString = "";
-  inputStringSteer = "";
+  
   
   //This should clean the buffer. 
   Serial.flush();
@@ -146,7 +140,23 @@ void change() {
 
 void distance(String reference, int sensorReading) { 
   Serial.print(reference + ":");
-  Serial.write(sensorReading);
+  Serial.print(sensorReading);
+  Serial.print(";");
   delay(10);
 }
 
+void irDistance(String reference, int analogReading) {
+  if(analogReading > 60) {
+  Serial.print(reference + ":");
+  Serial.print(analogReading);
+  Serial.print(";");
+  delay(10);
+  }
+  else {
+    analogReading = -1;
+    Serial.print(reference + ":");
+    Serial.print(analogReading);
+    Serial.print(";");
+    delay(10);    
+  }
+}
