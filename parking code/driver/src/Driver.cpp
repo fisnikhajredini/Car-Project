@@ -90,14 +90,14 @@ namespace automotive {
               
 
 				if(carIsMoving == false) { // initialize speed
-					 vc.setSpeed(0.5);
+					 vc.setSpeed(2);
 					 vc.setSteeringWheelAngle(0);
                      carIsMoving = true;
                     //cerr << "Car Initialized" << endl;
 
                 }else if(prepareToPark == false && spaceMeasurementCommenced == false && startParkingSequence == false
                          && startParkingSequence == false && startReverseRightParking == false && startReverseLeftParking == false){
-                    vc.setSpeed(0.5);
+                    vc.setSpeed(2);
                     vc.setSteeringWheelAngle(0);
                     carIsMoving = true;
                     cerr << "Car Moving" << endl;
@@ -130,9 +130,9 @@ namespace automotive {
                                 
                             }
                         }
-                        vc.setSpeed(0.5);
+                        vc.setSpeed(2);
                         vc.setSteeringWheelAngle(0);
-					//}
+					
                            
 
                 
@@ -142,7 +142,7 @@ namespace automotive {
 					vc.setFlashingLightsRight(true);
 					vc.setSpeed(0.5);
                     vc.setSteeringWheelAngle(0);
-                    if (++counter > 30){ // count b4 u check
+                    if (++counter > 72){ // count b4 u check
 					
                         startParkingSequence = true;
                     }
@@ -160,7 +160,7 @@ namespace automotive {
 					vc.setBrakeLights(false);
 					vc.setSpeed(-1.6);
 					vc.setSteeringWheelAngle(25);
-					if(++counter > 70){
+					if(++counter > 190){
 						startReverseLeftParking = true;
 					}
                     cerr << "Reverse Right"<< endl;
@@ -168,9 +168,9 @@ namespace automotive {
 				
 				if(startReverseLeftParking == true){
                     cerr << "Reverse left"<< endl;
-					vc.setSpeed(-.175);
+					vc.setSpeed(-1.6);
 					vc.setSteeringWheelAngle(-25);
-					if(++counter > 195){
+					if(++counter > 260){
 						// park car
 						vc.setBrakeLights(true);
 						vc.setSpeed(0);
