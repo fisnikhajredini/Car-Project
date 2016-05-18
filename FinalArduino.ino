@@ -57,6 +57,7 @@ void loop() {
     steer = 90;
     driveServo.writeMicroseconds(drive);
     steerServo.write(steer);
+    //zero is for resetting the controller. So if it was turned on and we turn it off it will resume to the code.
     zero++;
     if(zero >= 10) {
       rcInteruppt = LOW;
@@ -66,7 +67,6 @@ void loop() {
   else {
   //This is where the arduino will send sensor data to the proxy
 
-   
     sensorReading = USC.getRange();
     distance("USC", sensorReading);
 
@@ -84,7 +84,6 @@ void loop() {
     Serial.print(",");
   
   //This is where the arduino will recieve messages from the proxy.
-  
   //Checking all the Serial that is recieved and will start if the Serial is greater than 0.
    while(Serial.available() > 0) {
       
@@ -92,11 +91,13 @@ void loop() {
 
       inputString +=inByte;
       
+      //Proxy is sending corrupted data sometimes. This part is for decoding.
       int indexOne = inputString.indexOf("=");
       int indexTwo = inputString.indexOf("=", indexOne + 1);
       int indexThree = inputString.indexOf(";");
       int indexFour = inputString.indexOf(";", indexThree + 1);
-
+      
+      //Checks if the string is complete
       if(inputString.substring(0, indexOne) == "speed" && inputString.substring(indexThree +1, indexTwo) == "angle") {
         drive = inputString.substring(indexOne + 1, indexThree).toInt();
         steer = inputString.substring(indexTwo +1, indexFour).toInt();
@@ -106,16 +107,12 @@ void loop() {
       
    }  
     //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
-    //Need to test with only inputString.length running both driving and steering commands.
     if(inputString.length() >1 ) {
       
       driveServo.writeMicroseconds(drive);
 
       steerServo.write(steer);
     }
-    
-    //Will only execute if the while loop above is made since otherwise the inputString length will be lesser than 0.
-    //Need to test with only inputString.length running both driving and steering commands.
    
   }
   //Restoring the original value to inputString.
@@ -127,18 +124,18 @@ void loop() {
   delay(10);
   
 }
-
+//Used for the state of the controller.
 void change() {
   rcInteruppt = HIGH;
 }
-
+//US sensor sending.
 void distance(String reference, double sensorReading) { 
   Serial.print(reference + ":");
   Serial.print(sensorReading);
   Serial.print(";");
   delay(10);
 }
-
+//IR sensor sending.
 void irDistance(String reference, int analogReading) {
   if(analogReading > 60) {
   Serial.print(reference + ":");
